@@ -1,0 +1,626 @@
+*******************************************************************************
+* Starcraft Replay file format description *
+*
+* document version: 0.10 *
+* document date : 2004-10-09 *
+* document authors: Soar Chin *
+*
+* or contact us via mail *
+* mailto:webmaster@soarchin.com *
+*
+*******************************************************************************
+
+===============================================================================
+Table of Content
+===============================================================================
+1.0 Introduction
+2.0 Decompress Data
+3.0 [Header]
+4.0 [Player Commands]
+4.1 [Time Blocks]
+4.2 [Command Blocks]
+4.3 Unit IDs
+4.4 Unit Types
+5.0 [Map Data]
+6.0 General Notes
+7.0 Credits
+8.0 Document revision history
+
+===============================================================================
+DISCLAIMER (please read it ...)
+===============================================================================
+
+The use of the information provided in this document is free of charge as long
+as you follow the rules above. Furthermore you may copy it freely as long as
+the file is unchanged (please mail us about any error or addition - we like
+to keep things centralized).
+
+We would really appreciate it if you credit us in your project or drop us
+a line via mail - because we like to know if the work put into this document
+was anything worth after all ;-)
+
+===============================================================================
+1.0 Introduction
+===============================================================================
+
+An important word ahead.
+The information in this document is addressed to developers who want to create
+programs, tools and websites that help to enrich the gaming experience for the
+*whole* WarCraft III community.
+
+We absolutely do not tolerate hacks and cheats. Therefore you MUST NOT use
+the information provided in this document for any of these purposes.
+
+This file is meant to contain a description of the replay format itself.
+
+The whole file is still under construction. The meaning of some fields is still
+unknown and "known" fields might be wrong. Please contact us if you figure out
+any unknown values or find a replay that simply does not conform with the
+description of a "known" field.
+
+Convention:
+-----------
+Sections directly related to data stored in the replay file are written in
+square brackets [].
+
+===============================================================================
+2.0 Decompress Data
+===============================================================================
+
+Starcraft replay data is compressed by algorithms which are similar to PKWare
+DCL (or even the same as it, but I cannot identify that as the decompress codes
+are from jca)
+
+We don't know the size of compressed blocks, but we can read the size of them
+from some *tiny* blocks(only 1 dword compressed in these blocks).
+Then we can decompress them by jca's codes.
+
+offset  | size/type  | decompressed   | Description
+--------+------------+----------------+------------------------------------------
+0x0000  | n bytes    | 1 dword        | Replay ID (always 0x53526572)
+n       | m bytes    | 0x279 bytes    | Replay Header
+m+n     | l bytes    | 1 dword        | Player Commands Length(len1)
+m+n+l   | p bytes    | len1 bytes     | Player Commands
+m+n+l+p | q bytes    | 1 dword        | Map Data Length(len2)
+m+n+l+p | r bytes    | len2 bytes     | Map Data
++q      |            |                | 
+m+n+l+p | 1 dword    | not compressed | RWA Data Length(len3)
++q+r    |            |                | 
+m+n+l+p | len3 bytes | not compressed | RWA Data
++q+r+4  |            |                | 
+
+Notes:
+1. RWA Data was imported by jca's software RWA(Replay with Audio). It is used
+to save sound information, and is not compressed.
+2. Check attachments for decompress codes in C++/Pascal (unpack.cpp/.h/.pas)
+
+===============================================================================
+3.0 [Header]
+===============================================================================
+The header has the following format:
+
+offset | size/type | Description
+-------+-----------+-----------------------------------------------------------
+0x0000 | 1 byte    | game engine, 0x00 for Starcraft, 0x01 for Brood War
+0x0001 | 1 dword   | game frames
+       |           | each frame is 42 ms long. During this time, all actions
+       |           | are done at the same time in latter command data.
+0x0005 | 3 bytes   | unknown, always 0x00 0x00 0x48
+0x0008 | 1 dword   | save time of replay, a unix time stamp
+0x000C | 12 bytes  | unknown, always 0x08 08 08 08 08 08 08 08 00 00 00 00
+0x0018 | 28 chars  | game name, padding 0x00 as extra characters
+0x0034 | 2 words   | Map size, for width and height
+0x0038 | 16 bytes  | unknown
+0x0048 | 24 chars  | creator name, padding 0x00 as extra characters
+0x0060 | 1 byte    | unknown (map type?)
+0x0061 | 26 chars  | map name, padding 0x00 as extra characters
+0x007B | 38 bytes  | unknown
+0x00A1 | 432 bytes | 12 * 36 bytes, 12 player records (see description below)
+0x0251 | 8 dwords  | player spot color (ABGR) (?)
+0x0271 | 8 bytes   | player spot index (?)
+
+The size of the header is 0x279 bytes so far.
+
+===============================================================================
+4.0 [Player Commands]
+===============================================================================
+Player Commands Data is segmented into seperate time blocks.
+
+-------------------------------------------------------------------------------
+4.1 [Time Blocks]
+-------------------------------------------------------------------------------
+The time block has the following format:
+
+offset | size/type | Description
+-------+-----------+-----------------------------------------------------------
+0x0000 | 1 dword | frames past (aka frames increment after last time block)
+       |         | 1 frame = 42 ms
+0x0004 | 1 byte  | total length n of all command blocks below
+0x0005 | n bytes | Command blocks
+
+-------------------------------------------------------------------------------
+4.2 [Command Blocks]
+-------------------------------------------------------------------------------
+Each time block contains one or several command blocks of either fixed or
+variable size. The order of these blocks is not fixed and not all known block
+types have to be present in a replay.
+Command blocks always start with one byte containing the player ID and one byte
+representing the block ID. Using this ID one can identify specific blocks while
+skipping unwanted (using the block size).
+Below all known blocks are listed by their block ID followed by a description
+of the data following the ID. Denoted in square brackets is the overall size
+of each block (including the one byte player ID and one byte block ID).
+
+-------------------------------------------------------------------------------
+0x09 - Select Units [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+1 byte - count of units selected
+n words - units ID (repeated n times, 1 time for each unit) (see 4.3)
+
+-------------------------------------------------------------------------------
+0x0A - Shift Select Units [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+1 byte - count of units selected
+n words - units ID (repeated n times, 1 time for each unit) (see 4.3)
+
+Notes:
+Only record units which were added to current selection
+
+-------------------------------------------------------------------------------
+0x0B - Shift Deelect Units [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+1 byte - count of units deselected
+n words - units ID (repeated n times, 1 time for each unit) (see 4.3)
+
+Notes:
+Only record units which were removed from current selection
+
+-------------------------------------------------------------------------------
+0x0C - Build [ 9 bytes ]
+-------------------------------------------------------------------------------
+1 byte - Building Unit Type (See 4.4)
+1 word - Position X
+1 word - Position Y
+1 word - Building Unit ID (See 4.3)
+
+-------------------------------------------------------------------------------
+0x0D - Vision [ 4 bytes ]
+-------------------------------------------------------------------------------
+2 bytes - unknown
+
+-------------------------------------------------------------------------------
+0x0E - Ally [ 6 bytes ]
+-------------------------------------------------------------------------------
+4 bytes - unknown
+
+-------------------------------------------------------------------------------
+0x13 - Hotkey [ 4 bytes ]
+-------------------------------------------------------------------------------
+1 byte - 0x00 for Assign a hotkey, 0x01 for press a hotkey to select units
+1 byte - hotkey number (0-9)
+
+-------------------------------------------------------------------------------
+0x14 - Move [ 11 bytes ]
+-------------------------------------------------------------------------------
+1 word - Position X
+1 word - Position Y
+1 word - Unit ID, 0xFFFF for using Position X/Y, or move to this unit (see 4.3)
+1 word - unknown1
+1 byte - unknown2
+
+-------------------------------------------------------------------------------
+0x15 - Attack/Right Click/Cast Magic/Use Ability [ 12 bytes ]
+-------------------------------------------------------------------------------
+1 word - Position X
+1 word - Position Y
+1 word - Unit ID, 0xFFFF for using Position X/Y, or move to this unit (see 4.3)
+1 word - unknown
+1 byte - 0x00 Move with right click
+0x06 Move by click move icon
+0x08 Attack
+0x09 Gather
+0x0E Attack Move
+0x13 Failed Casting (?)
+0x1B Infest CC
+0x22 Repair
+0x27 Clear Rally
+0x28 Set Rally
+0x4F Gather
+0x50 Gather
+0x70 Unload
+0x71 Yamato
+0x73 Lockdown
+0x77 Dark Swarm
+0x78 Parasite
+0x79 Spawn Broodling
+0x7A EMP
+0x7E Launch Nuke
+0x84 Lay Mine
+0x8B ComSat Scan
+0x8D Defense Matrix
+0x8E Psionic Storm
+0x8F Recall
+0x90 Plague
+0x91 Consume
+0x92 Ensnare
+0x93 Stasis
+0x94 Hallucination
+0x98 Patrol
+0xB1 Heal
+0xB4 Restore
+0xB5 Disruption Web
+0xB6 Mind Control
+0xB8 Feedback
+0xB9 Optic Flare
+0xBA Maelstrom
+0xC0 Irradiate
+1 byte - 0x00 for normal attack, 0x01 for shift-attack
+
+-------------------------------------------------------------------------------
+0x18 - Cancel [ 2 bytes ]
+-------------------------------------------------------------------------------
+no additional data
+
+-------------------------------------------------------------------------------
+0x19 - Cancel Hatch [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+no additional data
+
+-------------------------------------------------------------------------------
+0x1A - Stop [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+1 byte - unknown
+
+-------------------------------------------------------------------------------
+0x1E - Return Cargo [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+1 byte - unknown
+
+-------------------------------------------------------------------------------
+0x1F - Train [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+1 word - Unit Type (see 4.4)
+
+-------------------------------------------------------------------------------
+0x20 - Cancel Train [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+2 bytes - unknown
+
+-------------------------------------------------------------------------------
+0x21 - Cloak [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+1 byte - unknown
+
+-------------------------------------------------------------------------------
+0x22 - Decloak [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+1 byte - unknown
+
+-------------------------------------------------------------------------------
+0x23 - Hatch [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+1 word - Unit Type (see 4.4)
+
+-------------------------------------------------------------------------------
+0x25 - Unsiege [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+1 byte - unknown
+
+-------------------------------------------------------------------------------
+0x26 - Siege [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+1 byte - unknown
+
+-------------------------------------------------------------------------------
+0x27 - Build Interceptor/Scarab [ 3 + 2 * n byte
+s ]
+-------------------------------------------------------------------------------
+no additional data
+
+-------------------------------------------------------------------------------
+0x28 - Unload All [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+1 byte - unknown
+
+-------------------------------------------------------------------------------
+0x29 - Unload [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+2 bytes - unknown
+
+-------------------------------------------------------------------------------
+0x2A - Merge Archon [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+no additional data
+
+-------------------------------------------------------------------------------
+0x2B - Hold Position [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+1 byte - unknown
+
+-------------------------------------------------------------------------------
+0x2C - Burrow [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+1 byte - unknown
+
+-------------------------------------------------------------------------------
+0x2D - Unburrow [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+1 byte - unknown
+
+-------------------------------------------------------------------------------
+0x2E - Cancel Nuke [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+no additional data
+
+-------------------------------------------------------------------------------
+0x2F - Lift [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+4 bytes - unknown
+
+-------------------------------------------------------------------------------
+0x30 - Research [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+1 byte - Research ID
+0x00 Stim Pack
+0x01 Lockdown
+0x02 EMP Shockwave
+0x03 Spider Mines
+0x05 Siege Tank
+0x07 Irradiate
+0x08 Yamato Gun
+0x09 Cloaking Field (wraith)
+0x0A Personal Cloaking (ghost)
+0x0B Burrow
+0x0D Spawn Broodling
+0x0F Plague
+0x10 Consume
+0x11 Ensnare
+0x13 Psionic Storm
+0x14 Hallucination
+0x15 Recall
+0x16 Stasis Field
+0x18 Restoration
+0x19 Disruption Web
+0x1B Mind Control
+0x1E Optical Flare
+0x1F Maelstrom
+0x20 Lurker Aspect
+
+-------------------------------------------------------------------------------
+0x31 - Cancel Research [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+no additional data
+
+-------------------------------------------------------------------------------
+0x32 - Upgrade [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+1 byte - Upgrade ID
+0x00 Terran Infantry Armor
+0x01 Terran Vehicle Plating
+0x02 Terran Ship Plating
+0x03 Zerg Carapace
+0x04 Zerg Flyer Carapace
+0x05 Protoss Ground Armor
+0x06 Protoss Air Armor
+0x07 Terran Infantry Weapons
+0x08 Terran Vehicle Weapons
+0x09 Terran Ship Weapons
+0x0A Zerg Melee Attacks
+0x0B Zerg Missile Attacks
+0x0C Zerg Flyer Attacks
+0x0D Protoss Ground Weapons
+0x0E Protoss Air Weapons
+0x0F Protoss Plasma Shields
+0x10 U-238 Shells (Marine Range)
+0x11 Ion Thrusters (Vulture Speed)
+0x13 Titan Reactor (Science Vessel Energy)
+0x14 Ocular Implants (Ghost Sight)
+0x15 Moebius Reactor (Ghost Energy)
+0x16 Apollo Reactor (Wraith Energy)
+0x17 Colossus Reactor (Battle Cruiser Energy)
+0x18 Ventral Sacs (Overlord Transport)
+0x19 Antennae (Overlord Sight)
+0x1A Pneumatized Carapace (Overlord Speed)
+0x1B Metabolic Boost (Zergling Speed)
+0x1C Adrenal Glands (Zergling Attack)
+0x1D Muscular Augments (Hydralisk Speed)
+0x1E Grooved Spines (Hydralisk Range)
+0x1F Gamete Meiosis (Queen Energy)
+0x20 Defiler Energy
+0x21 Singularity Charge (Dragoon Range)
+0x22 Leg Enhancement (Zealot Speed)
+0x23 Scarab Damage
+0x24 Reaver Capacity
+0x25 Gravitic Drive (Shuttle Speed)
+0x26 Sensor Array (Observer Sight)
+0x27 Gravitic Booster (Observer Speed)
+0x28 Khaydarin Amulet (Templar Energy)
+0x29 Apial Sensors (Scout Sight)
+0x2A Gravitic Thrusters (Scout Speed)
+0x2B Carrier Capacity
+0x2C Khaydarin Core (Arbiter Energy)
+0x2F Argus Jewel (Corsair Energy)
+0x31 Argus Talisman (Dark Archon Energy)
+0x33 Caduceus Reactor (Medic Energy)
+0x34 Chitinous Plating (Ultralisk Armor)
+0x35 Anabolic Synthesis (Ultralisk Speed)
+0x36 Charon Boosters (Goliath Range)
+
+-------------------------------------------------------------------------------
+0x35 - Morph [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+1 word - Building Unit Type (see 4.4)
+
+-------------------------------------------------------------------------------
+0x36 - Stim [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+no additional data
+
+-------------------------------------------------------------------------------
+0x57 - Leave Game [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+1 byte - Quit reason
+0x01 for quit
+0x06 for drop
+
+-------------------------------------------------------------------------------
+0x5A - Merge Dark Archon [ 3 + 2 * n bytes ]
+-------------------------------------------------------------------------------
+no additional data
+
+-------------------------------------------------------------------------------
+4.3 Unit IDs
+-------------------------------------------------------------------------------
+Each unit has a unique ID.
+
+Units ID is a word. Unit IDs are automatically generated by game when you
+build/train/spawn/hatch a unit(seems increment by 1 each time)
+
+-------------------------------------------------------------------------------
+4.4 Unit Types
+-------------------------------------------------------------------------------
+0x00 Marine
+0x01 Ghost
+0x02 Vulture
+0x03 Goliath
+0x05 Siege Tank
+0x07 SCV
+0x07 Wraith
+0x09 Science Vessel
+0x0B Dropship
+0x0C Battlecruiser
+0x0E Nuke
+0x20 Firebat
+0x22 Medic
+0x25 Zergling
+0x26 Hydralisk
+0x27 Ultralisk
+0x29 Drone
+0x2A Overlord
+0x2B Mutalisk
+0x2C Guardian
+0x2D Queen
+0x2E Defiler
+0x2F Scourge
+0x32 Infested Terran
+0x3A Valkyrie
+0x3C Corsair
+0x3D Dark Templar
+0x3E Devourer
+0x40 Probe
+0x41 Zealot
+0x42 Dragoon
+0x43 High Templar
+0x45 Shuttle
+0x46 Scout
+0x47 Arbiter
+0x48 Carrier
+0x53 Reaver
+0x54 Observer
+0x67 Lurker
+0x6A Command Center
+0x6B ComSat
+0x6C Nuclear Silo
+0x6D Supply Depot
+0x6E Refinery //refinery?
+0x6F Barracks
+0x70 Academy //Academy?
+0x71 Factory
+0x72 Starport
+0x73 Control Tower
+0x74 Science Facility
+0x75 Covert Ops
+0x76 Physics Lab
+0x78 Machine Shop
+0x7A Engineering Bay
+0x7B Armory
+0x7C Missile Turret
+0x7D Bunker
+0x82 Infested CC
+0x83 Hatchery
+0x84 Lair
+0x85 Hive
+0x86 Nydus Canal
+0x87 Hydralisk Den
+0x88 Defiler Mound
+0x89 Greater Spire
+0x8A Queens Nest
+0x8B Evolution Chamber
+0x8C Ultralisk Cavern
+0x8D Spire
+0x8E Spawning Pool
+0x8F Creep Colony
+0x90 Spore Colony
+0x92 Sunken Colony
+0x95 Extractor
+0x9A Nexus
+0x9B Robotics Facility
+0x9C Pylon
+0x9D Assimilator
+0x9F Observatory
+0xA0 Gateway
+0xA2 Photon Cannon
+0xA3 Citadel of Adun
+0xA4 Cybernetics Core
+0xA5 Templar Archives
+0xA6 Forge
+0xA7 Stargate
+0xA9 Fleet Beacon
+0xAA Arbiter Tribunal
+0xAB Robotics Support Bay
+0xAC Shield Battery
+0xC0 Larva
+0xC1 Rine/Bat
+0xC2 Dark Archon
+0xC3 Archon
+0xC4 Scarab
+0xC5 Interceptor
+0xC6 Interceptor/Scarab"
+
+===============================================================================
+5.0 [Map Data]
+===============================================================================
+There are several sections in this part, which has below format:
+1 dword - Section Signal ('TILE', 'MTXM', 'ISOM', 'UNIT')
+1 dword - Section length n
+n bytes - Section body
+
+TODO - research each section of Map Data
+
+===============================================================================
+6.0 General Notes
+===============================================================================
+1. There are only user commands in a replay. There are no computer actions, no
+'training complete' data, no results of fights, no information about death
+of units, etc..
+2. Any field of view changes (e.g. click on minimap, 'space', 'ctrl-a')
+are not saved in the replay.
+
+===============================================================================
+7.0 Credits
+===============================================================================
+We like to thank the following people for their help on the rep format
+(in alphabetical order):
+
+jca for
+- his BWrepLib to serve information on Starcraft replays
+
+===============================================================================
+8.0 Document revision history
+===============================================================================
+o general notes
++ information added
+- information removed
+! information changed
+
+version 0.10 - 2004-10-09
+-------------------------
+2004-10-02: + Complete documents
+2004-10-06: + Some explaination on commands
+2004-10-09: + Some notes
+2004-10-09: o First public release
+
+===============================================================================
+End of File
+===============================================================================
+
