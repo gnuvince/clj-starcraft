@@ -62,6 +62,14 @@
   (.order (ByteBuffer/wrap (.unpackSection unpacker 0x279))
           ByteOrder/LITTLE_ENDIAN))
 
+(defn unpack-commands
+  [unpacker]
+  (let [commands-length (Integer/reverseBytes
+                         (.getInt
+                          (ByteBuffer/wrap (.unpackSection unpacker 4))))]
+    (.order (ByteBuffer/wrap (.unpackSection unpacker commands-length))
+            ByteOrder/LITTLE_ENDIAN)))
+    
 
 (defn unpack
   "Unpack a replay file."
@@ -69,6 +77,7 @@
   (let [unpacker (BinReplayUnpacker. f)
         m {:replay-id (unpack-replay-id unpacker)
            :headers (decode-headers (unpack-headers unpacker))
+           :commands (unpack-commands unpacker)
            }]
     (.close unpacker) ; needs to be closed manually.
     m))
