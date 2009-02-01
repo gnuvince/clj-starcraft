@@ -1,6 +1,5 @@
 (ns starcraft.replay.parse
-  (:import (hu.belicza.andras.bwhf.control BinReplayUnpacker)
-           (java.io File)
+  (:import (java.io File)
            (java.nio ByteBuffer ByteOrder)
            (java.util Date)))
 
@@ -8,24 +7,20 @@
   "Read a nul-terminated string. Stop at \\0 or at length n,
   whichever comes first. Return nil if trying to read too much."
   [buf n]
-  (try
-   ; use doall to read the buffer non-lazily.
-   (let [bytes (doall (for [_ (range n)] (char (.get buf))))]
-     (apply str (take-while #(not= % \u0000) bytes)))
-   (catch RuntimeException e nil)))
+                                        ; use doall to read the buffer non-lazily.
+  (let [bytes (doall (for [_ (range n)] (char (.get buf))))]
+    (apply str (take-while #(not= % \u0000) bytes))))
+
 
 (defn- read-field-aux
   [buf n type]
-  (try
-   (let [f ({Byte    (memfn get)
-             Short   (memfn getShort)
-             Integer (memfn getInt)} type)
-         vec (into [] (for [_ (range n)] (f buf)))]
-     (if (= n 1)
-       (first vec)
-       vec))
-   (catch RuntimeException e nil)))
-  
+  (let [f ({Byte    (memfn get)
+            Short   (memfn getShort)
+            Integer (memfn getInt)} type)
+        vec (into [] (for [_ (range n)] (f buf)))]
+    (if (= n 1)
+      (first vec)
+      vec)))
 
 (derive String  ::string)
 (derive Byte    ::integer)
@@ -36,13 +31,11 @@
   "Read `size` units of type `type` from buf.
   `buf` : a java.nio.ByteBuffer
   `size`: an integer or a vector of the form [integer type]
-  `type`: String, Byte, Short or Integer.
-
-  Return nil if reading too much data, passed an invalid
-  size or type."
+  `type`: String, Byte, Short or Integer."
   (fn [buf size type] [(vector? size) type]))
 
-(defmethod read-field :default [& args] nil)
+(defmethod read-field :default [& args]
+  (throw (Exception. "invalid type")))
 
 (defmethod read-field [false ::string]
   [buf size type]

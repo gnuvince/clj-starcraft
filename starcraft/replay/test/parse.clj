@@ -15,8 +15,8 @@
         "fetching 0 bytes returns an empty string")
     (is (= (parse/null-string (buf1) 1) "")
         "fetching 1 byte from an all-zero buffer returns an empty string")
-    (is (nil? (parse/null-string (buf1) 2))
-        "fetching more bytes than the buffer's length should return nil")
+    (is (thrown? RuntimeException (parse/null-string (buf1) 2))
+        "fetching more bytes than the buffer's length should raise an exception")
     
     (is (= (parse/null-string (buf2) 1) "A"))
     (is (= (parse/null-string (buf2) 2) "A"))
@@ -33,8 +33,8 @@
 (deftest read-field
   (let [buf #(ByteBuffer/wrap (into-array Byte/TYPE (map byte [65 0 66])))
         buf2 #(ByteBuffer/wrap (into-array Byte/TYPE (map byte [1 1 1 1])))]
-    (is (nil? (parse/read-field (buf) 1 Character))
-        "Invalid types should return nil.")
+    (is (thrown? Exception (parse/read-field (buf) 1 Character))
+        "Invalid types should raise an exception.")
     
     (is (= (parse/read-field (buf) 1 String) "A"))
     (is (= (parse/read-field (buf) 2 String) "A"))
@@ -44,12 +44,12 @@
         "reading one (1) piece of data returns it as a scalar")
     (is (= (parse/read-field (buf2) 2 Byte) [(byte 1) (byte 1)])
         "reading more than one (1) pieces of data returns a vector")
-    (is (nil? (parse/read-field (buf2) 10 Byte))
-        "reading more than the length of the buffer returns nil")
+    (is (thrown? RuntimeException (parse/read-field (buf2) 10 Byte))
+        "reading more than the length of the buffer should raise an exception")
 
     (is (= (parse/read-field (buf2) 1 Short) (short 257)))
     (is (= (parse/read-field (buf2) 2 Short) [(short 257) (short 257)]))
-    (is (nil? (parse/read-field (buf2) 4 Short)))
+    (is (thrown? RuntimeException (parse/read-field (buf2) 4 Short)))
 
     (is (= (parse/read-field (buf2) 1 Integer) 0x1010101))
     
@@ -72,11 +72,11 @@
                                [:field [1 Byte] Byte]))
         "nested sized fields")
 
-    (is (= {:field nil} (parse/parse-buffer (buf)
-                                            [:field nil Byte]))
+    (is (thrown? NullPointerException (parse/parse-buffer (buf)
+                                                          [:field nil Byte]))
         "invalid nested size parameter")
-    (is (= {:field nil} (parse/parse-buffer (buf)
-                                            [:field [] Byte]))
+    (is (thrown? RuntimeException (parse/parse-buffer (buf)
+                                                      [:field [] Byte]))
         "invalid nested size parameter")
     
     ))
