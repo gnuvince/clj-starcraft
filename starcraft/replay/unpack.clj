@@ -10,12 +10,12 @@
   "Decode a single player's data into a map."
   [buf]
   (parse/parse-buffer buf
-    [:player-number  1 :dword]
-    [:slot-number    1 :dword]
-    [:type           1 :byte #({0 nil, 1 :cpu, 2 :human} (int %))]
-    [:race           1 :byte #({0 "Zerg", 1 "Terran", 2 "Protoss"} (int %))]
-    [nil             1 :byte]
-    [:name          25 :string]))
+    [:player-number  1 Integer]
+    [:slot-number    1 Integer]
+    [:type           1 Byte #({0 nil, 1 :cpu, 2 :human} (int %))]
+    [:race           1 Byte #({0 "Zerg", 1 "Terran", 2 "Protoss"} (int %))]
+    [nil             1 Byte]
+    [:name          25 String]))
 
 (defn decode-players-data
   [data]
@@ -30,22 +30,22 @@
 (defn decode-headers
   [buf]
   (parse/parse-buffer buf
-    [:game-engine         1 :byte]
-    [:game-frames         1 :dword]
-    [nil                  3 :byte]
-    [:save-time           1 :dword #(Date. (long (* 1000 %)))]
-    [nil                 12 :byte]
-    [:game-name          28 :string]
-    [:map-width           1 :word]
-    [:map-height          1 :word]
-    [nil                 16 :byte]
-    [:creator-name       24 :string]
-    [nil                  1 :byte]
-    [:map-name           26 :string]
-    [nil                 38 :byte]
-    [:players           432 :byte decode-players-data]
-    [:player-spot-color   8 :dword]
-    [:player-spot-index   8 :byte]))
+    [:game-engine         1 Byte]
+    [:game-frames         1 Integer]
+    [nil                  3 Byte]
+    [:save-time           1 Integer #(Date. (long (* 1000 %)))]
+    [nil                 12 Byte]
+    [:game-name          28 String]
+    [:map-width           1 Short]
+    [:map-height          1 Short]
+    [nil                 16 Byte]
+    [:creator-name       24 String]
+    [nil                  1 Byte]
+    [:map-name           26 String]
+    [nil                 38 Byte]
+    [:players           432 Byte decode-players-data]
+    [:player-spot-color   8 Integer]
+    [:player-spot-index   8 Byte]))
 
 
 ;; The replay id is the first 4 bytes and is always 0x53526572
@@ -66,7 +66,9 @@
 (defn unpack
   "Unpack a replay file."
   [#^File f]
-  (let [unpacker (BinReplayUnpacker. f)]
-    {:replay-id (unpack-replay-id unpacker)
-     :headers (unpack-headers unpacker)
-     }))
+  (let [unpacker (BinReplayUnpacker. f)
+        m {:replay-id (unpack-replay-id unpacker)
+           :headers (decode-headers (unpack-headers unpacker))
+           }]
+    (.close unpacker) ; needs to be closed manually.
+    m))

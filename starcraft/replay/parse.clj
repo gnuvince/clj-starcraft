@@ -6,18 +6,20 @@
 (defn null-string
   "Read a nul-terminated string. Stop at \\0 or at length n,
   whichever comes first. Return nil if trying to read too much."
-  [buf n]
-                                        ; use doall to read the buffer non-lazily.
+  [#^ByteBuffer buf n]
+  ;; use doall to read the buffer non-lazily.
   (let [bytes (doall (for [_ (range n)] (char (.get buf))))]
     (apply str (take-while #(not= % \u0000) bytes))))
 
+(defmacro get-data
+  [buf type]
+  `(cond (isa? ~type Byte) (.get ~buf)
+         (isa? ~type Short) (.getShort ~buf)
+         (isa? ~type Integer) (.getInt ~buf)))
 
 (defn- read-field-aux
-  [buf n type]
-  (let [f ({Byte    (memfn get)
-            Short   (memfn getShort)
-            Integer (memfn getInt)} type)
-        vec (into [] (for [_ (range n)] (f buf)))]
+  [#^ByteBuffer buf n type]
+  (let [vec (into [] (for [_ (range n)] (get-data buf type)))]
     (if (= n 1)
       (first vec)
       vec)))
@@ -60,7 +62,7 @@
   "A v-form is a vector of the form: [:field-name length Type func?]
   Each v-form is read from buf and the whole data is return as a map.
   If a field-name is nil, the data is not returned (but the field is
-  read nonetheless to move forward into the buffer."
+  read nonetheless to move forward into the buffer)."
   [buf & v-forms]
   (reduce (fn [m [field-name size type func]]
             (let [data (read-field buf size type)]
