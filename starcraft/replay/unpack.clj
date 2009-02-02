@@ -51,7 +51,7 @@
 ;; The replay id is the first 4 bytes and is always 0x53526572
 (defn unpack-replay-id
   [unpacker]
-  (Integer/reverseBytes
+  (Integer/reverseBytes                 ; BIG_ENDIAN by default
    (.getInt
     (ByteBuffer/wrap
      (.unpackSection unpacker 4)))))
