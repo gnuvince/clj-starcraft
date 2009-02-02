@@ -5,12 +5,13 @@
 
 (defn null-string
   "Read a nul-terminated string. Stop at \\0 or at length n,
-  whichever comes first. Return nil if trying to read too much."
+  whichever comes first."
   [#^ByteBuffer buf n]
   ;; use doall to read the buffer non-lazily.
   (let [bytes (doall (for [_ (range n)] (char (.get buf))))]
     (apply str (take-while #(not= % \u0000) bytes))))
 
+;; This is a macro because using memfns is 10-20x slower.
 (defmacro get-data
   [buf type]
   `(cond (isa? ~type Byte) (.get ~buf)
