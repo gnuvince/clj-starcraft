@@ -25,7 +25,6 @@
       (first vec)
       vec)))
 
-(derive String  ::string)
 (derive Byte    ::integer)
 (derive Short   ::integer)
 (derive Integer ::integer)
@@ -40,7 +39,7 @@
 (defmethod read-field :default [& args]
   (throw (Exception. "invalid type")))
 
-(defmethod read-field [false ::string]
+(defmethod read-field [false String]
   [buf size type]
   (null-string buf size))
 
