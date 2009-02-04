@@ -22,7 +22,7 @@
 
 (defaction build
   "Build"
-  [:unit 1 Byte #(*units* %)]
+  [:unit 1 Byte #(*units* (int %))]
   [:pos-x 1 Short]
   [:pos-y 1 Short]
   [:unit-id 1 Short])
@@ -37,7 +37,7 @@
 
 (defaction hot-key
   "Hot key"
-  [:action 1 Byte #(["Set" "Get"] %)]
+  [:action 1 Byte #(["Set" "Get"] (int %))]
   [:number 1 Byte])
 
 (defaction move
@@ -54,7 +54,7 @@
   [:pos-y 1 Short]
   [:unit-id 1 Short]
   [:unknown 1 Short]
-  [:action 1 Byte #(*attacks* %)]
+  [:action 1 Byte #(*attacks* (int %))]
   [:shifted 1 Byte])
 
 (defaction cancel
@@ -73,7 +73,7 @@
 
 (defaction train
   "Train"
-  [:unit-type 1 Short #(*units* %)])
+  [:unit-type 1 Short #(*units* (int %))])
 
 (defaction cancel-train
   "Cancel train"
@@ -89,7 +89,7 @@
 
 (defaction hatch
   "Hatch"
-  [:unit-type 1 Short #(*units* %)])
+  [:unit-type 1 Short #(*units* (int %))])
 
 (defaction unsiege
   "Unsiege"
@@ -134,25 +134,25 @@
 
 (defaction research
   "Research"
-  [:research 1 Byte #(*researches* %)])
+  [:research 1 Byte #(*researches* (int %))])
 
 (defaction cancel-research
   "Cancel Research")
 
 (defaction upgrade
   "Upgrade"
-  [:upgrade 1 Byte #(*upgrades* %)])
+  [:upgrade 1 Byte #(*upgrades* (int %))])
 
 (defaction morph
   "Morph"
-  [:building 1 Short #(*units* %)])
+  [:building 1 Short #(*units* (int %))])
 
 (defaction stim
   "Stim")
 
 (defaction leave-game
   "Leave Game"
-  [:reason 1 Byte #({1 "Quit", 6 "Drop"} %)])
+  [:reason 1 Byte #({1 "Quit", 6 "Drop"} (int %))])
 
 (defaction merge-dark-archon
   "Merge Dark Archon")

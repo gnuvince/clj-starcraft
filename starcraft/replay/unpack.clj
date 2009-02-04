@@ -1,15 +1,15 @@
 (ns starcraft.replay.unpack
-  (:require [starcraft.replay.parse :as parse])
+  (:use [starcraft.replay.parse]
+        [starcraft.replay.actions])
   (:import (hu.belicza.andras.bwhf.control BinReplayUnpacker)
            (java.io File)
            (java.nio ByteBuffer ByteOrder)
            (java.util Date)))
 
-
 (defn decode-player-data
   "Decode a single player's data into a map."
-  [buf]
-  (parse/parse-buffer buf
+  [#^ByteBuffer buf]
+  (parse-buffer buf
     [:player-number  1 Integer]
     [:slot-number    1 Integer]
     [:type           1 Byte #({0 nil, 1 :cpu, 2 :human} (int %))]
@@ -28,8 +28,8 @@
 
 
 (defn decode-headers
-  [buf]
-  (parse/parse-buffer buf
+  [#^ByteBuffer buf]
+  (parse-buffer buf
     [:game-engine         1 Byte]
     [:game-frames         1 Integer]
     [nil                  3 Byte]
@@ -47,10 +47,36 @@
     [:player-spot-color   8 Integer]
     [:player-spot-index   8 Byte]))
 
+(defn decode-command-block
+  [#^ByteBuffer buf cmd-size tick]
+  (let [end (+ cmd-size (.position buf))]
+    (loop [v []]
+      (if (= (.position buf) end)
+        v
+        (let [player-id (.get buf)
+              action-id (.get buf)
+              {:keys [name fields]} (*actions* (int action-id))
+              action (apply parse-buffer buf fields)]
+          (recur (conj v (merge {:tick tick
+                                 :name name
+                                 :player-id player-id}
+                                 action))))))))
+
+         
+(defn decode-commands
+  [#^ByteBuffer buf]
+  (loop [cmds []]
+    (if (.hasRemaining buf)
+      (let [tick (.getInt buf)
+            cmd-size (.get buf)]
+        (recur
+         (conj cmds (decode-command-block buf cmd-size tick))))
+      cmds)))
+          
 
 ;; The replay id is the first 4 bytes and is always 0x53526572
 (defn unpack-replay-id
-  [unpacker]
+  [#^BinReplayUnpacker unpacker]
   (Integer/reverseBytes                 ; BIG_ENDIAN by default
    (.getInt
     (ByteBuffer/wrap
@@ -58,12 +84,12 @@
 
 ;; The headers are the first 0x279 bytes following the replay-id
 (defn unpack-headers
-  [unpacker]
+  [#^BinReplayUnpacker unpacker]
   (.order (ByteBuffer/wrap (.unpackSection unpacker 0x279))
           ByteOrder/LITTLE_ENDIAN))
 
 (defn unpack-commands
-  [unpacker]
+  [#^BinReplayUnpacker unpacker]
   (let [commands-length (Integer/reverseBytes
                          (.getInt
                           (ByteBuffer/wrap (.unpackSection unpacker 4))))]
@@ -77,7 +103,7 @@
   (let [unpacker (BinReplayUnpacker. f)
         m {:replay-id (unpack-replay-id unpacker)
            :headers (decode-headers (unpack-headers unpacker))
-           :commands (unpack-commands unpacker)
+           :commands (decode-commands (unpack-commands unpacker))
            }]
     (.close unpacker) ; needs to be closed manually.
     m))

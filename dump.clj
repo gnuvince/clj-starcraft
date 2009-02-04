@@ -5,7 +5,10 @@
 (defn run []
   (doseq [f (map #(File. %) *command-line-args*)]
     (try
-     (prn (unpack f))
-     (catch Exception e (println "Couldn't dump" f (.getMessage e))))))
+     (println (count (unpack f)))
+     (catch Exception e
+       (println "Couldn't dump" f)
+       (println e)
+       (println (.printStackTrace e))))))
 
 (time (run))
