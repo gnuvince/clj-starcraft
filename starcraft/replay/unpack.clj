@@ -1,10 +1,10 @@
 (ns starcraft.replay.unpack
   (:use [starcraft.replay.parse]
         [starcraft.replay.actions])
-  (:import (hu.belicza.andras.bwhf.control BinReplayUnpacker)
-           (java.io File)
-           (java.nio ByteBuffer ByteOrder)
-           (java.util Date)))
+  (:import [hu.belicza.andras.bwhf.control BinReplayUnpacker]
+           [java.io File]
+           [java.nio ByteBuffer ByteOrder]
+           [java.util Date]))
 
 (defn decode-player-data
   "Decode a single player's data into a map."
@@ -68,9 +68,9 @@
   (loop [cmds []]
     (if (.hasRemaining buf)
       (let [tick (.getInt buf)
-            cmd-size (.get buf)]
-        (recur
-         (conj cmds (decode-command-block buf cmd-size tick))))
+            cmd-size (.get buf)
+            cmd-block (decode-command-block buf cmd-size tick)]
+        (recur (conj cmds cmd-block)))
       cmds)))
           
 

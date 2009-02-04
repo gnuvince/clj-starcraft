@@ -1,7 +1,7 @@
 (ns starcraft.replay.parse
-  (:import (java.io File)
-           (java.nio ByteBuffer ByteOrder)
-           (java.util Date)))
+  (:import [java.io File]
+           [java.nio ByteBuffer ByteOrder]
+           [java.util Date]))
 
 (defn null-string
   "Read a nul-terminated string. Stop at \\0 or at length n,
