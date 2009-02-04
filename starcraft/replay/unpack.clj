@@ -60,7 +60,7 @@
           (recur (conj v (merge {:tick tick
                                  :name name
                                  :player-id player-id}
-                                 action))))))))
+                                action))))))))
 
          
 (defn decode-commands

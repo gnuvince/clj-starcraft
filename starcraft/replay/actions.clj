@@ -37,7 +37,7 @@
 
 (defaction hot-key
   "Hot key"
-  [:action 1 Byte #(["Set" "Get"] (int %))]
+  [:action 1 Byte #(get ["Set" "Get"] (int %) %)]
   [:number 1 Byte])
 
 (defaction move
