@@ -1,3 +1,5 @@
+(set! *warn-on-reflection* true)
+
 (ns starcraft.dump
   (:use [starcraft.replay.unpack])
   (:import [java.io File]))
@@ -7,8 +9,6 @@
     (try
      (println (count (unpack f)))
      (catch Exception e
-       (println "Couldn't dump" f)
-       (println e)
-       (println (.printStackTrace e))))))
+       (println "Couldn't dump" f)))))
 
 (time (run))

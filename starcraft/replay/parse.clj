@@ -11,11 +11,26 @@
   (let [bytes (doall (for [_ (range n)] (char (.get buf))))]
     (apply str (take-while #(not= % \u0000) bytes))))
 
+(defn get-byte
+  [#^ByteBuffer buf]
+  (let [x (byte (.get buf))]
+    (short (bit-and x 0xff))))
+
+(defn get-short
+  [#^ByteBuffer buf]
+  (let [x (short (.getShort buf))]
+    (int (bit-and x 0xffff))))
+
+(defn get-integer
+  [#^ByteBuffer buf]
+  (let [x (int (.getInt buf))]
+    (long (bit-and x 0xffffffff))))
+
 (defn- read-field-aux
   [#^ByteBuffer buf n type]
-  (let [f ({Byte    #(short (bit-and (.get %) 0xff))
-            Short   #(int   (bit-and (.getShort %) 0xffff))
-            Integer #(long  (bit-and (.getInt %) 0xffffffff))} type)
+  (let [f ({Byte get-byte
+            Short get-short
+            Integer get-integer} type)
         vec (into [] (for [_ (range n)] (f buf)))]
     (if (= n 1)
       (first vec)
