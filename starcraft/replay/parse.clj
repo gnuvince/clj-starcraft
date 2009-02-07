@@ -11,16 +11,12 @@
   (let [bytes (doall (for [_ (range n)] (char (.get buf))))]
     (apply str (take-while #(not= % \u0000) bytes))))
 
-;; This is a macro because using memfns is 10-20x slower.
-(defmacro get-data
-  [buf type]
-  `(cond (isa? ~type Byte) (.get ~buf)
-         (isa? ~type Short) (.getShort ~buf)
-         (isa? ~type Integer) (.getInt ~buf)))
-
 (defn- read-field-aux
   [#^ByteBuffer buf n type]
-  (let [vec (into [] (for [_ (range n)] (get-data buf type)))]
+  (let [f ({Byte    #(short (bit-and (.get %) 0xff))
+            Short   #(int   (bit-and (.getShort %) 0xffff))
+            Integer #(long  (bit-and (.getInt %) 0xffffffff))} type)
+        vec (into [] (for [_ (range n)] (f buf)))]
     (if (= n 1)
       (first vec)
       vec)))
@@ -47,7 +43,7 @@
   [buf size type]
   (read-field-aux buf size type))
 
-(defmethod read-field [true ::string]
+(defmethod read-field [true String]
   [buf [n type-aux] type]
   (let [size (read-field-aux buf n type-aux)]
     (null-string buf size)))

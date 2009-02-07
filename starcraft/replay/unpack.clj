@@ -53,8 +53,9 @@
     (loop [v []]
       (if (= (.position buf) end)
         v
-        (let [player-id (.get buf)
-              action-id (.get buf)
+        (let [{:keys [player-id action-id]} (parse-buffer buf
+                                              [:player-id 1 Byte]
+                                              [:action-id 1 Byte])
               {:keys [name fields]} (*actions* (int action-id))
               action (apply parse-buffer buf fields)]
           (recur (conj v (merge {:tick tick
@@ -67,8 +68,9 @@
   [#^ByteBuffer buf]
   (loop [cmds []]
     (if (.hasRemaining buf)
-      (let [tick (.getInt buf)
-            cmd-size (.get buf)
+      (let [{:keys [tick cmd-size]} (parse-buffer buf
+                                      [:tick 1 Integer]
+                                      [:cmd-size 1 Byte])
             cmd-block (decode-command-block buf cmd-size tick)]
         (recur (conj cmds cmd-block)))
       cmds)))
