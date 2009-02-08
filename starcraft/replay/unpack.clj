@@ -21,7 +21,7 @@
   [data]
   (let [players (partition 36 data)]
     (map (fn [vec]
-           (let [buf (ByteBuffer/wrap (into-array Byte/TYPE vec))]
+           (let [buf (ByteBuffer/wrap (into-array Byte/TYPE (map byte vec)))]
              (.order buf ByteOrder/LITTLE_ENDIAN)
              (decode-player-data buf)))
          players)))
@@ -47,6 +47,7 @@
     [:player-spot-color   8 Integer]
     [:player-spot-index   8 Byte]))
 
+;; FIXME: refactor this function
 (defn decode-command-block
   [#^ByteBuffer buf cmd-size tick]
   (let [end (+ cmd-size (.position buf))]
@@ -55,13 +56,17 @@
         v
         (let [{:keys [player-id action-id]} (parse-buffer buf
                                               [:player-id 1 Byte]
-                                              [:action-id 1 Byte])
-              {:keys [name fields]} (*actions* (int action-id))
-              action (apply parse-buffer buf fields)]
-          (recur (conj v (merge {:tick tick
-                                 :name name
-                                 :player-id player-id}
-                                action))))))))
+                                              [:action-id 1 Byte])]
+          (if (contains? *actions* (int action-id))
+            (let [{:keys [name fields]} (*actions* (int action-id))
+                  action (apply parse-buffer buf fields)]
+              (recur (conj v (merge {:tick tick
+                                     :name name
+                                     :player-id player-id}
+                                    action))))
+            (do
+              (.position buf end)
+              v)))))))
 
          
 (defn decode-commands
