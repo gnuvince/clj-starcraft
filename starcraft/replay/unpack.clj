@@ -9,22 +9,24 @@
 (defn decode-player-data
   "Decode a single player's data into a map."
   [#^ByteBuffer buf]
-  (parse-buffer buf
-    [:player-number  1 Integer]
-    [:slot-number    1 Integer]
-    [:type           1 Byte #({0 nil, 1 :cpu, 2 :human} (int %))]
-    [:race           1 Byte #({0 "Zerg", 1 "Terran", 2 "Protoss"} (int %))]
-    [nil             1 Byte]
-    [:name          25 String]))
+  (assoc (parse-buffer buf
+            [:player-number  1 Integer]
+            [:slot-number    1 Integer]
+            [:type           1 Byte #({0 nil, 1 :cpu, 2 :human} (int %))]
+            [:race           1 Byte #({0 "Zerg", 1 "Terran", 2 "Protoss"} (int %))]
+            [nil             1 Byte]
+            [:name          25 String])
+    :actions
+    []))
 
 (defn decode-players-data
   [data]
   (let [players (partition 36 data)]
-    (map (fn [vec]
-           (let [buf (ByteBuffer/wrap (into-array Byte/TYPE (map byte vec)))]
-             (.order buf ByteOrder/LITTLE_ENDIAN)
-             (decode-player-data buf)))
-         players)))
+    (into [] (map (fn [vec]
+                    (let [buf (ByteBuffer/wrap (into-array Byte/TYPE (map byte vec)))]
+                      (.order buf ByteOrder/LITTLE_ENDIAN)
+                      (decode-player-data buf)))
+                  players))))
 
 
 (defn decode-headers
@@ -49,9 +51,9 @@
 
 ;; FIXME: refactor this function
 (defn decode-command-block
-  [#^ByteBuffer buf cmd-size tick]
+  [#^ByteBuffer buf cmd-size tick cmds]
   (let [end (+ cmd-size (.position buf))]
-    (loop [v []]
+    (loop [v cmds]
       (if (= (.position buf) end)
         v
         (let [{:keys [player-id action-id]} (parse-buffer buf
@@ -60,10 +62,12 @@
               {:keys [name fields]} (*actions* (int action-id))
               action (apply parse-buffer buf fields)]
           (if action
-            (recur (conj v (merge {:tick tick
-                                   :name name
-                                   :player-id player-id}
-                                  action)))
+            (recur (update-in v
+                              [(int player-id)]
+                              conj
+                              (merge {:tick tick
+                                      :name name}
+                                     action)))
             ;; Move to the end of the command block and return v
             ;; if the action-id is unknown.
             (do
@@ -73,13 +77,12 @@
          
 (defn decode-commands
   [#^ByteBuffer buf]
-  (loop [cmds []]
+  (loop [cmds (into [] (replicate 12 []))]
     (if (.hasRemaining buf)
       (let [{:keys [tick cmd-size]} (parse-buffer buf
-                                      [:tick 1 Integer]
-                                      [:cmd-size 1 Byte])
-            cmd-block (decode-command-block buf cmd-size tick)]
-        (recur (into cmds cmd-block)))
+                                                  [:tick 1 Integer]
+                                                  [:cmd-size 1 Byte])]
+        (recur (decode-command-block buf cmd-size tick cmds)))
       cmds)))
           
 
@@ -110,9 +113,14 @@
   "Unpack a replay file."
   [#^File f]
   (let [unpacker (BinReplayUnpacker. f)
-        m {:replay-id (unpack-replay-id unpacker)
-           :headers (decode-headers (unpack-headers unpacker))
-           :commands (decode-commands (unpack-commands unpacker))
-           }]
+        replay-id (unpack-replay-id unpacker)
+        -headers (decode-headers (unpack-headers unpacker))
+        -players (:players -headers)
+        headers (dissoc -headers :players)
+        commands (decode-commands (unpack-commands unpacker))
+        players (map #(assoc %1 :actions %2) -players commands)]
     (.close unpacker) ; needs to be closed manually.
-    m))
+    {:replay-id replay-id
+     :headers headers
+     :players players
+     }))
