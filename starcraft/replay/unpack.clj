@@ -56,14 +56,16 @@
         v
         (let [{:keys [player-id action-id]} (parse-buffer buf
                                               [:player-id 1 Byte]
-                                              [:action-id 1 Byte])]
-          (if (contains? *actions* (int action-id))
-            (let [{:keys [name fields]} (*actions* (int action-id))
-                  action (apply parse-buffer buf fields)]
-              (recur (conj v (merge {:tick tick
-                                     :name name
-                                     :player-id player-id}
-                                    action))))
+                                              [:action-id 1 Byte])
+              {:keys [name fields]} (*actions* (int action-id))
+              action (apply parse-buffer buf fields)]
+          (if action
+            (recur (conj v (merge {:tick tick
+                                   :name name
+                                   :player-id player-id}
+                                  action)))
+            ;; Move to the end of the command block and return v
+            ;; if the action-id is unknown.
             (do
               (.position buf end)
               v)))))))
@@ -77,7 +79,7 @@
                                       [:tick 1 Integer]
                                       [:cmd-size 1 Byte])
             cmd-block (decode-command-block buf cmd-size tick)]
-        (recur (conj cmds cmd-block)))
+        (recur (into cmds cmd-block)))
       cmds)))
           
 

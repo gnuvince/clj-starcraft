@@ -7,7 +7,7 @@
 (defn run []
   (doseq [f (map #(File. %) *command-line-args*)]
     (try
-     (prn (unpack f))
+     (unpack f)
      (catch Exception e
        (println "Couldn't dump" f)))))
 
