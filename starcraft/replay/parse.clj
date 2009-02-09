@@ -23,8 +23,8 @@
 
 (defn get-integer
   [#^ByteBuffer buf]
-  (let [x (int (.getInt buf))]
-    (long (bit-and x 0xffffffff))))
+  (int (.getInt buf)))
+    
 
 (defn- read-field-aux
   [#^ByteBuffer buf n type]
