@@ -16,8 +16,7 @@
             [:race           1 Byte #({0 "Zerg", 1 "Terran", 2 "Protoss"} (int %))]
             [nil             1 Byte]
             [:name          25 String])
-    :actions
-    []))
+    :actions []))
 
 (defn decode-players-data
   [data]
