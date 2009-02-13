@@ -13,17 +13,17 @@
 
 (defn get-byte
   [#^ByteBuffer buf]
-  (let [x (byte (.get buf))]
-    (short (#'bit-and x 0xff))))
+  (let [x (int (.get buf))]
+    (bit-and x 0xff)))
 
 (defn get-short
   [#^ByteBuffer buf]
-  (let [x (short (.getShort buf))]
-    (int (#'bit-and x 0xffff))))
+  (let [x (int (.getShort buf))]
+    (bit-and x 0xffff)))
 
 (defn get-integer
   [#^ByteBuffer buf]
-  (int (.getInt buf)))
+  (.getInt buf))
     
 
 (defn- read-field-aux
