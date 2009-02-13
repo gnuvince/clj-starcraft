@@ -117,7 +117,7 @@
         -players (:players -headers)
         headers (dissoc -headers :players)
         commands (decode-commands (unpack-commands unpacker))
-        players (map #(assoc %1 :actions %2) -players commands)]
+        players (into [] (map #(assoc %1 :actions %2) -players commands))]
     (.close unpacker) ; needs to be closed manually.
     {:replay-id replay-id
      :headers headers
