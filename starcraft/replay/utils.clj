@@ -1,6 +1,8 @@
 (ns starcraft.replay.utils
   (:use [clojure.contrib.seq-utils]))
-  
+
+(def *one-minute* (* 24 60))
+
 (defn avg
   "Return the average of a sequence."
   [aseq]
@@ -9,7 +11,7 @@
 (defn- apm-aux
   [[a & as :as actions] n limit]
   (if (seq actions)
-    (if (< (:tick a) (* limit 24 60))
+    (if (< (:tick a) (* limit *one-minute*))
       (apm-aux as (inc n) limit)
       (lazy-cons n (apm-aux as 1 (inc limit))))
     [n]))
@@ -20,7 +22,7 @@
   (apm-aux actions 0 1))
 
 (defn apm-stats
-  "Return the least, average and peek apm."
+  "Return the least, average and peak apm."
   [actions]
   (let [apms (apm actions)]
     [(apply min apms)
@@ -30,6 +32,9 @@
 (defn unit-distribution
   "Return a map of the unit distribution for a set of actions."
   [actions]
+  ;; Train is the standard unit creation action for Terran
+  ;; and Protoss, Hatch is the standard unit creation action
+  ;; for Zerg. Archons have their own action types.
   (let [m {"Train" #(:unit-type %)
            "Hatch" #(:unit-type %)
            "Merge Archon" (constantly "Archon")
@@ -38,3 +43,8 @@
      (for [{action-name :name :as action} actions
            :when (m action-name)]
        ((m action-name) action)))))
+
+(defn action-distribution
+  "Returns a map of the action distribution for a set of actions."
+  [actions]
+  (frequencies (map :name actions)))
