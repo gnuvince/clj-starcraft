@@ -1,0 +1,19 @@
+Compilation
+===========
+
+ant -Dclojure.jar=<path to clojure.jar> -Dclojure-contrib.jar=<path to clojure-contrib.jar>
+
+
+Usage
+=====
+
+(ns sc
+  (:use [starcraft.replay.unpack]
+        [starcraft.replay.utils])
+  (:import [java.io File]))
+
+(def rep (unpack (File. "LastReplay.rep")))
+(:headers rep)
+(unit-distribution (get-in rep [:players 0 :actions]))
+(action-distribution (get-in rep [:players 0 :actions]))
+(apm (get-in rep [:players 0 :actions]))

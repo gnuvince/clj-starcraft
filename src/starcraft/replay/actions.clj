@@ -29,11 +29,11 @@
 
 (defaction vision
   "Vision"
-  [:unknown 2 Byte])
+  [nil 2 Byte])
 
 (defaction ally
   "Ally"
-  [:unknown 4 Byte])
+  [nil 4 Byte])
 
 (defaction hot-key
   "Hot key"
@@ -45,15 +45,15 @@
   [:pos-x 1 Short]
   [:pos-y 1 Short]
   [:unit-id 1 Short]
-  [:unknown1 1 Short]
-  [:unknown2 1 Byte])
+  [nil 1 Short]
+  [nil 1 Byte])
 
 (defaction attack
   "Attack/Right Click/Cast Magic/Use Ability"
   [:pos-x 1 Short]
   [:pos-y 1 Short]
   [:unit-id 1 Short]
-  [:unknown 1 Short]
+  [nil 1 Short]
   [:action 1 Byte #(*attacks* (int %))]
   [:shifted 1 Byte])
 
@@ -65,11 +65,11 @@
 
 (defaction stop
   "Stop"
-  [:unknown 1 Byte])
+  [nil 1 Byte])
 
 (defaction return-cargo
   "Return Cargo"
-  [:unknown 1 Byte])
+  [nil 1 Byte])
 
 (defaction train
   "Train"
@@ -77,15 +77,15 @@
 
 (defaction cancel-train
   "Cancel train"
-  [:unknown 2 Byte])
+  [nil 2 Byte])
 
 (defaction cloak
   "Cloak"
-  [:unknown 1 Byte])
+  [nil 1 Byte])
 
 (defaction decloak
   "Decloak"
-  [:unknown 1 Byte])
+  [nil 1 Byte])
 
 (defaction hatch
   "Hatch"
@@ -93,44 +93,44 @@
 
 (defaction unsiege
   "Unsiege"
-  [:unknown 1 Byte])
+  [nil 1 Byte])
 
 (defaction siege
   "Siege"
-  [:unknown 1 Byte])
+  [nil 1 Byte])
 
 (defaction build-interceptor
   "Build Interceptor/Scarab")
 
 (defaction unload-all
   "Unload All"
-  [:unknown 1 Byte])
+  [nil 1 Byte])
 
 (defaction unload
   "Unload"
-  [:unknown 2 Byte])
+  [nil 2 Byte])
 
 (defaction merge-archon
   "Merge Archon")
 
 (defaction hold-position
   "Hold Position"
-  [:unknown 1 Byte])
+  [nil 1 Byte])
 
 (defaction burrow
   "Burrow"
-  [:unknown 1 Byte])
+  [nil 1 Byte])
 
 (defaction unburrow
   "Unburrow"
-  [:unknown 1 Byte])
+  [nil 1 Byte])
 
 (defaction cancel-nuke
   "Cancel Nuke")
 
 (defaction lift
   "Lift"
-  [:unknown 4 Byte])
+  [nil 4 Byte])
 
 (defaction research
   "Research"
