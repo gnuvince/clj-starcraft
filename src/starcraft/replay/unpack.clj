@@ -21,11 +21,11 @@
 (defn decode-players-data
   [data]
   (let [players (partition 36 data)]
-    (into [] (map (fn [vec]
-                    (let [buf (ByteBuffer/wrap (into-array Byte/TYPE (map byte vec)))]
-                      (.order buf ByteOrder/LITTLE_ENDIAN)
-                      (decode-player-data buf)))
-                  players))))
+    (vec (map (fn [vec]
+                (let [buf (ByteBuffer/wrap (into-array Byte/TYPE (map byte vec)))]
+                  (.order buf ByteOrder/LITTLE_ENDIAN)
+                  (decode-player-data buf)))
+              players))))
 
 
 (defn decode-headers
@@ -76,7 +76,7 @@
          
 (defn decode-commands
   [#^ByteBuffer buf]
-  (loop [cmds (into [] (replicate 12 []))]
+  (loop [cmds (vec (replicate 12 []))]
     (if (.hasRemaining buf)
       (let [{:keys [tick cmd-size]} (parse-buffer buf
                                                   [:tick 1 Integer]
@@ -117,7 +117,7 @@
         -players (:players -headers)
         headers (dissoc -headers :players)
         commands (decode-commands (unpack-commands unpacker))
-        players (into [] (map #(assoc %1 :actions %2) -players commands))]
+        players (vec (map #(assoc %1 :actions %2) -players commands))]
     (.close unpacker) ; needs to be closed manually.
     {:replay-id replay-id
      :headers headers

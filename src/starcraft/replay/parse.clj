@@ -25,16 +25,15 @@
   [#^ByteBuffer buf]
   (.getInt buf))
     
-
 (defn- read-field-aux
   [#^ByteBuffer buf n type]
   (let [f ({Byte get-byte
             Short get-short
             Integer get-integer} type)
-        vec (into [] (for [_ (range n)] (f buf)))]
+        v (vec (for [_ (range n)] (f buf)))]
     (if (= n 1)
-      (first vec)
-      vec)))
+      (first v)
+      v)))
 
 (derive Byte    ::integer)
 (derive Short   ::integer)
