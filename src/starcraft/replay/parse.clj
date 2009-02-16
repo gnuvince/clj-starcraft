@@ -29,11 +29,11 @@
   [#^ByteBuffer buf n type]
   (let [f ({Byte get-byte
             Short get-short
-            Integer get-integer} type)
-        v (if (= n 1)
-            (f buf)
-            (vec (for [_ (range n)] (f buf))))]
-    v))
+            Integer get-integer} type)]
+    (if (= n 1)
+      (f buf)
+      (vec (for [_ (range n)] (f buf))))))
+
 
 (derive Byte    ::integer)
 (derive Short   ::integer)
