@@ -9,12 +9,12 @@
   (/ (reduce + aseq) (count aseq)))
 
 (defn- apm*
-  [[a & as :as actions] n limit]
+  [actions n limit]
   (lazy-seq
    (if-let [actions (seq actions)]
-     (if (< (:tick a) (* limit *one-minute*))
-       (apm* as (inc n) limit)
-       (cons n (apm* as 1 (inc limit))))
+     (if (< (:tick (first actions)) (* limit *one-minute*))
+       (apm* (next actions) (inc n) limit)
+       (cons n (apm* (next actions) 1 (inc limit))))
      [n])))
 
 (defn apm
