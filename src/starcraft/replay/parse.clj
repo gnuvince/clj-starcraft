@@ -4,7 +4,7 @@
            [java.util Date]))
 
 (defn null-string
-  "Read a nul-terminated string. Stop at \\0 or at length n,
+  "Read a nul-terminated string. Stop at \\0 or at length n
   whichever comes first."
   [#^ByteBuffer buf n]
   ;; use doall to read the buffer non-lazily.
@@ -24,16 +24,16 @@
 (defn get-integer
   [#^ByteBuffer buf]
   (.getInt buf))
-    
+
 (defn- read-field-aux
   [#^ByteBuffer buf n type]
   (let [f ({Byte get-byte
             Short get-short
             Integer get-integer} type)
-        v (vec (for [_ (range n)] (f buf)))]
-    (if (= n 1)
-      (first v)
-      v)))
+        v (if (= n 1)
+            (f buf)
+            (vec (for [_ (range n)] (f buf))))]
+    v))
 
 (derive Byte    ::integer)
 (derive Short   ::integer)
