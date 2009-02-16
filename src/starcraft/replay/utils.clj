@@ -13,8 +13,8 @@
   (lazy-seq
    (if-let [actions (seq actions)]
      (if (< (:tick (first actions)) (* limit *one-minute*))
-       (apm* (next actions) (inc n) limit)
-       (cons n (apm* (next actions) 1 (inc limit))))
+       (apm* (rest actions) (inc n) limit)
+       (cons n (apm* (rest actions) 1 (inc limit))))
      [n])))
 
 (defn apm
