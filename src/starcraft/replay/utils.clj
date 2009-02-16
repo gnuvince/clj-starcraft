@@ -8,18 +8,19 @@
   [aseq]
   (/ (reduce + aseq) (count aseq)))
 
-(defn- apm-aux
+(defn- apm*
   [[a & as :as actions] n limit]
-  (if (seq actions)
-    (if (< (:tick a) (* limit *one-minute*))
-      (apm-aux as (inc n) limit)
-      (lazy-cons n (apm-aux as 1 (inc limit))))
-    [n]))
+  (lazy-seq
+   (if-let [actions (seq actions)]
+     (if (< (:tick a) (* limit *one-minute*))
+       (apm* as (inc n) limit)
+       (cons n (apm* as 1 (inc limit))))
+     [n])))
 
 (defn apm
   "Return a lazy seq of the number of actions for each minute."
   [actions]
-  (apm-aux actions 0 1))
+  (apm* actions 0 1))
 
 (defn apm-stats
   "Return the least, average and peak apm."
