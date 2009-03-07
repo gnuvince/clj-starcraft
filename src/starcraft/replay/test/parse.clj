@@ -10,24 +10,19 @@
 (deftest null-string
   (let [buf1 #(ByteBuffer/wrap (make-array Byte/TYPE 1))
         buf2 #(ByteBuffer/wrap (into-array Byte/TYPE (map byte [65 0 66])))]
+    (are (= _1 _2)
+         (parse/null-string (buf1) 0) ""
+         (parse/null-string (buf1) 1) ""
 
-    (is (= (parse/null-string (buf1) 0) "")
-        "fetching 0 bytes returns an empty string")
-    (is (= (parse/null-string (buf1) 1) "")
-        "fetching 1 byte from an all-zero buffer returns an empty string")
-    (is (thrown? RuntimeException (parse/null-string (buf1) 2))
-        "fetching more bytes than the buffer's length should raise an exception")
-    
-    (is (= (parse/null-string (buf2) 1) "A"))
-    (is (= (parse/null-string (buf2) 2) "A"))
-    (is (= (parse/null-string (buf2) 3) "A")
-        "fetching should stop at the first NUL character")
+         (parse/null-string (buf2) 1) "A"
+         (parse/null-string (buf2) 2) "A"
+         (parse/null-string (buf2) 3) "A")
+    (is (thrown? RuntimeException (parse/null-string (buf1) 2)))
 
     (let [b (buf2)]
       (parse/null-string b 3)
       (is (= (.position b) 3)
-          "the buffer should be read until n, even if a NUL is found before the end."))               
-        
+          "the buffer should be read until n, even if a NUL is found before the end."))
     ))
 
 (deftest read-field
@@ -35,24 +30,20 @@
         buf2 #(ByteBuffer/wrap (into-array Byte/TYPE (map byte [1 1 1 1])))]
     (is (thrown? Exception (parse/read-field (buf) 1 Character))
         "Invalid types should raise an exception.")
-    
-    (is (= (parse/read-field (buf) 1 String) "A"))
-    (is (= (parse/read-field (buf) 2 String) "A"))
-    (is (= (parse/read-field (buf) 3 String) "A"))
-
-    (is (= (parse/read-field (buf2) 1 Byte) (byte 1))
-        "reading one (1) piece of data returns it as a scalar")
-    (is (= (parse/read-field (buf2) 2 Byte) [(byte 1) (byte 1)])
-        "reading more than one (1) pieces of data returns a vector")
     (is (thrown? RuntimeException (parse/read-field (buf2) 10 Byte))
         "reading more than the length of the buffer should raise an exception")
-
-    (is (= (parse/read-field (buf2) 1 Short) (short 257)))
-    (is (= (parse/read-field (buf2) 2 Short) [(short 257) (short 257)]))
     (is (thrown? RuntimeException (parse/read-field (buf2) 4 Short)))
 
-    (is (= (parse/read-field (buf2) 1 Integer) 0x1010101))
-    
+    (are (= _1 _2)
+         (parse/read-field (buf) 1 String) "A"
+         (parse/read-field (buf) 2 String) "A"
+         (parse/read-field (buf) 3 String) "A"
+         (parse/read-field (buf2) 1 Byte) (byte 1)
+         (parse/read-field (buf2) 2 Byte) [(byte 1) (byte 1)]
+         (parse/read-field (buf2) 1 Short) (short 257)
+         (parse/read-field (buf2) 2 Short) [(short 257) (short 257)]
+         (parse/read-field (buf2) 1 Integer) 0x1010101)
+
     ))
 
 (deftest parse-buffer
@@ -78,5 +69,5 @@
     (is (thrown? RuntimeException (parse/parse-buffer (buf)
                                                       [:field [] Byte]))
         "invalid nested size parameter")
-    
+
     ))
