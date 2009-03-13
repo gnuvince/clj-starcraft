@@ -35,14 +35,20 @@
     [:game-frames         1 Integer]
     [nil                  3 Byte]
     [:save-time           1 Integer #(Date. (long (* 1000 %)))]
-    [nil                 12 Byte]
+    [:slots-available    12 Byte]
     [:game-name          28 String]
     [:map-width           1 Short]
     [:map-height          1 Short]
-    [nil                 16 Byte]
-    [:creator-name       24 String]
-    [nil                  1 Byte]
-    [:map-name           26 String]
+    [:is-broodwar2        1 Byte]
+    [:available-slots     1 Byte]
+    [:game-speed          1 Short]
+    [:game-type           1 Short]
+    [:game-subtype        1 Short]
+    [:rand-seed           1 Integer]
+    [:tile-set            1 Short]
+    [nil                  1 Short
+    [:creator-name       25 String]
+    [:map-name           32 String]
     [nil                 38 Byte]
     [:players           432 Byte decode-players-data]
     [:player-spot-color   8 Integer]
@@ -73,7 +79,7 @@
               (.position buf end)
               v)))))))
 
-         
+
 (defn decode-commands
   [#^ByteBuffer buf]
   (loop [cmds (vec (replicate 12 []))]
@@ -83,7 +89,7 @@
                                                   [:cmd-size 1 Byte])]
         (recur (decode-command-block buf cmd-size tick cmds)))
       cmds)))
-          
+
 
 ;; The replay id is the first 4 bytes and is always 0x53526572
 (defn unpack-replay-id
@@ -106,7 +112,7 @@
                           (ByteBuffer/wrap (.unpackSection unpacker 4))))]
     (.order (ByteBuffer/wrap (.unpackSection unpacker commands-length))
             ByteOrder/LITTLE_ENDIAN)))
-    
+
 
 (defn unpack
   "Unpack a replay file."
