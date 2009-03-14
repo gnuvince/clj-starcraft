@@ -13,7 +13,10 @@
             [:player-number  1 Integer]
             [:slot-number    1 Integer]
             [:type           1 Byte #({0 nil, 1 :cpu, 2 :human} %)]
-            [:race           1 Byte #({0 "Zerg", 1 "Terran", 2 "Protoss"} %)]
+            [:race           1 Byte #({0 "Zerg"
+                                       1 "Terran"
+                                       2 "Protoss"
+                                       6 "Random"} %)]
             [nil             1 Byte]
             [:name          25 String])
     :actions []))
