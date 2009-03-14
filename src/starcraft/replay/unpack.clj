@@ -12,8 +12,8 @@
   (assoc (parse-buffer buf
             [:player-number  1 Integer]
             [:slot-number    1 Integer]
-            [:type           1 Byte #({0 nil, 1 :cpu, 2 :human} (int %))]
-            [:race           1 Byte #({0 "Zerg", 1 "Terran", 2 "Protoss"} (int %))]
+            [:type           1 Byte #({0 nil, 1 :cpu, 2 :human} %)]
+            [:race           1 Byte #({0 "Zerg", 1 "Terran", 2 "Protoss"} %)]
             [nil             1 Byte]
             [:name          25 String])
     :actions []))
@@ -41,15 +41,47 @@
     [:map-height          1 Short]
     [:is-broodwar2        1 Byte]
     [:available-slots     1 Byte]
-    [:game-speed          1 Short]
-    [:game-type           1 Short]
-    [:game-subtype        1 Short]
+    [:speed               1 Short]
+    [:type                1 Short]
+    [:subtype             1 Short]
     [:rand-seed           1 Integer]
     [:tile-set            1 Short]
-    [nil                  1 Short
+    [nil                  1 Short]
     [:creator-name       25 String]
     [:map-name           32 String]
-    [nil                 38 Byte]
+    [:type2               1 Short]
+    [:subtype2            1 Short]
+    [:subtype-display     1 Short]
+    [:subtype-label       1 Short]
+    [:victory-conditions  1 Byte {0x00 "Map Default"
+                                  0x01 "Melee"
+                                  0x02 "Highest Score"
+                                  0x03 "Resources"
+                                  0x04 "CTF"
+                                  0x05 "Sudden Death"
+                                  0x06 "Slaughter"
+                                  0x07 "One on One"}]
+    [:resource-type       1 Byte {0x00 "Map Default"
+                                  0x01 "Fixed Value"
+                                  0x02 "Low"
+                                  0x03 "Medium"
+                                  0x04 "High"
+                                  0x05 "Income"}]
+    [:standard-unit-stats 1 Byte]
+    [:fog-of-war-unused   1 Byte]
+    [:starting-units      1 Byte {0x00 "Map Default"
+                                  0x01 "Workers Only"
+                                  0x02 "Workers and Center"}]
+    [:use-fixed-positions 1 Byte]
+    [:restriction-flags   1 Byte {0x01 "Allow Computer Players"
+                                  0x02 "Allow Single Player"}]
+    [:allies-allowed      1 Byte]
+    [:teams               1 Byte]
+    [:cheats              1 Byte]
+    [:tournament-mode     1 Byte]
+    [:victory-condition-value 1 Integer]
+    [:resources-value     1 Integer]
+    [nil                  4 Byte]
     [:players           432 Byte decode-players-data]
     [:player-spot-color   8 Integer]
     [:player-spot-index   8 Byte]))
